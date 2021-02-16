@@ -7,10 +7,13 @@
 //
 
 import UIKit
+import StoreKit
 
 class QuoteTableViewController: UITableViewController {
     
     //MARK: - Variables
+    
+    let productID = "dev.eliu.InspoQuotes_NoStoryboard.PremiumQuotes"
     
     var quotesToShow = [
         "Our greatest glory is not in never falling, but in rising every time we fall. — Confucius",
@@ -34,7 +37,7 @@ class QuoteTableViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // We need to setup a cell before we see anything
+        SKPaymentQueue.default().add(self)
         setupTableView()
         setupNavigationBar()
     }
@@ -100,6 +103,32 @@ class QuoteTableViewController: UITableViewController {
     //MARK: - In-App purchase methods
     
     func buyPremiumQuotes() {
+        if SKPaymentQueue.canMakePayments() {
+            
+            let paymentRequest = SKMutablePayment()
+            paymentRequest.productIdentifier = productID
+            SKPaymentQueue.default().add(paymentRequest)
+            
+        } else {
+            print("User can't make payments")
+        }
+     }
+    
+}
+
+//MARK: - SKPayment Delegate methods
+
+extension QuoteTableViewController: SKPaymentTransactionObserver {
+    
+    func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
+        
+        for transaction in transactions {
+            if transaction.transactionState == .purchased {
+                print("Transaction successful")
+            } else if transaction.transactionState == .failed {
+                print("Transaction failed")
+            }
+        }
         
     }
     

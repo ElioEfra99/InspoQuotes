@@ -40,6 +40,9 @@ class QuoteTableViewController: UITableViewController {
         SKPaymentQueue.default().add(self)
         setupTableView()
         setupNavigationBar()
+        if isPurchased() {
+            showPremiumQuotes()
+        }
     }
     
     //MARK: - User Methods
@@ -48,7 +51,7 @@ class QuoteTableViewController: UITableViewController {
         title = "Inspo Quotes"
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Restore", style: .plain, target: self, action: #selector(restorePressed))
         navigationController?.navigationBar.tintColor = .white
-        navigationController?.navigationBar.barTintColor = .systemTeal
+        navigationController?.navigationBar.barTintColor = UIColor(named: "navBarColor")
         navigationController?.navigationBar.titleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.white ]
         
     }
@@ -72,6 +75,9 @@ class QuoteTableViewController: UITableViewController {
     // MARK: - Table view data source
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if isPurchased() {
+             return quotesToShow.count
+        }
         return quotesToShow.count + 1
     }
     
@@ -81,6 +87,8 @@ class QuoteTableViewController: UITableViewController {
         if indexPath.row < quotesToShow.count {
             cell.textLabel?.text = quotesToShow[indexPath.row]
             cell.textLabel?.numberOfLines = 0
+            cell.textLabel?.textColor = .label
+            cell.accessoryType = .none
         } else {
             cell.textLabel?.text = "Get more quotes"
             cell.textLabel?.textColor = #colorLiteral(red: 0, green: 0.7671599984, blue: 0.8210678101, alpha: 1)
@@ -97,7 +105,6 @@ class QuoteTableViewController: UITableViewController {
             buyPremiumQuotes()
         }
         tableView.deselectRow(at: indexPath, animated: true)
-        // let cell = tableView.dequeueReusableCell(withIdentifier: "quote", for: indexPath)
     }
     
     //MARK: - In-App purchase methods
@@ -114,6 +121,23 @@ class QuoteTableViewController: UITableViewController {
         }
      }
     
+    func showPremiumQuotes() {
+        quotesToShow.append(contentsOf: premiumQuotes)
+        tableView.reloadData()
+    }
+    
+    func isPurchased() -> Bool {
+        let purchaseStatus = UserDefaults.standard.bool(forKey: productID)
+        
+        if purchaseStatus {
+            print("Previously purchased")
+            return true
+        }
+        
+        print("Never purchased")
+        return false
+    }
+    
 }
 
 //MARK: - SKPayment Delegate methods
@@ -125,6 +149,9 @@ extension QuoteTableViewController: SKPaymentTransactionObserver {
         for transaction in transactions {
             if transaction.transactionState == .purchased {
                 print("Transaction successful")
+                
+                showPremiumQuotes()
+                UserDefaults.standard.set(true, forKey: productID)
                 
                 SKPaymentQueue.default().finishTransaction(transaction)
             } else if transaction.transactionState == .failed {
